@@ -1,6 +1,8 @@
 package gitlab
 
 import (
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+
 	"git.eth4.dev/golibs/git"
 )
 
@@ -26,10 +28,28 @@ func NewAuth(user string, access, deploy, job string) git.Auth {
 	}
 }
 
-func (ga *gitlabAuth) Username() string {
-	return ga.username
+func (ga *gitlabAuth) BasicMethod() *http.BasicAuth {
+	return &http.BasicAuth{
+		Username: ga.username,
+		Password: ga.getToken(),
+	}
 }
 
-func (ga *gitlabAuth) Token(name git.TokenName) string {
-	return ga.tokens[name]
+func (ga *gitlabAuth) TokenMethod() *http.TokenAuth {
+	return &http.TokenAuth{
+		Token: ga.getToken(),
+	}
+}
+
+func (ga *gitlabAuth) getToken() string {
+	switch {
+	case ga.tokens[AccessToken] != "":
+		return ga.tokens[AccessToken]
+	case ga.tokens[JobToken] != "":
+		return ga.tokens[JobToken]
+	case ga.tokens[DeployToken] != "":
+		return ga.tokens[DeployToken]
+	default:
+		return ""
+	}
 }

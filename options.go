@@ -4,29 +4,57 @@ import (
 	"time"
 
 	gogit "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 type (
-	AddOption      func(o *gogit.AddOptions)
+	CloneOption    func(o *gogit.CloneOptions)
 	CheckoutOption func(o *gogit.CheckoutOptions)
+	AddOption      func(o *gogit.AddOptions)
 	CommitOption   func(o *gogit.CommitOptions)
 	PushOption     func(o *gogit.PushOptions)
 
 	OptionFunc interface {
-		CheckoutOption |
+		CloneOption |
+			CheckoutOption |
 			AddOption |
 			CommitOption |
 			PushOption
 	}
 
 	OptionType interface {
-		*gogit.CheckoutOptions |
+		*gogit.CloneOptions |
+			*gogit.CheckoutOptions |
 			*gogit.AddOptions |
 			*gogit.CommitOptions |
 			*gogit.PushOptions
 	}
 )
+
+func WithAuth(auth Auth) CloneOption {
+	return func(o *gogit.CloneOptions) {
+		o.Auth = auth.BasicMethod()
+	}
+}
+
+func WithURI(uri string) CloneOption {
+	return func(o *gogit.CloneOptions) {
+		o.URL = uri
+	}
+}
+
+func WithBranch(branch string) CloneOption {
+	return func(o *gogit.CloneOptions) {
+		o.ReferenceName = plumbing.NewBranchReferenceName(branch)
+	}
+}
+
+func WithTag(tag string) CloneOption {
+	return func(o *gogit.CloneOptions) {
+		o.ReferenceName = plumbing.NewTagReferenceName(tag)
+	}
+}
 
 func WithCreate() CheckoutOption {
 	return func(o *gogit.CheckoutOptions) {

@@ -30,19 +30,22 @@ type (
 	}
 
 	Auth interface {
-		Username() string
-		Token(name TokenName) string
+		BasicMethod() *http.BasicAuth
+		TokenMethod() *http.TokenAuth
 	}
 )
 
 // Open - открывает существующий репозиторий
-func Open(path string) (Repo, error) {
+func Open(path string, opts ...CloneOption) (Repo, error) {
 	var (
 		repo Repo = &gitRepository{path: path}
 		err  error
 	)
 
-	if !filepaths.FileExists(filepath.Join(path, ".git")) {
+	switch {
+	case !filepaths.FileExists(path):
+		return Clone(path, opts...)
+	case !filepaths.FileExists(filepath.Join(path, ".git")):
 		return nil, ErrWrongRepoPath
 	}
 
@@ -56,7 +59,7 @@ func Open(path string) (Repo, error) {
 
 // Clone - клонирует репозиторий с укзанным uri по указаанному пути
 // и возвращает интерфейс доступа к нему
-func Clone(uri, path, user, password string) (Repo, error) {
+func Clone(path string, options ...CloneOption) (Repo, error) {
 	if filepaths.FileExists(path) {
 		if filepaths.FileExists(filepath.Join(path, ".git")) {
 			return nil, ErrRepoPathNotEmpty
@@ -67,13 +70,9 @@ func Clone(uri, path, user, password string) (Repo, error) {
 		return nil, errors.Wrap(err, "create repo path")
 	}
 
-	repo, err := gogit.PlainClone(path, false, &gogit.CloneOptions{
-		URL: uri,
-		Auth: &http.BasicAuth{
-			Username: user, // не должно быть пустым
-			Password: password,
-		},
-	})
+	opts := processOptions[CloneOption, *gogit.CloneOptions](options...)
+
+	repo, err := gogit.PlainClone(path, false, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "clone repository")
 	}
