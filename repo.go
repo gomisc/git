@@ -53,13 +53,9 @@ func (r *gitRepository) Checkout(target string, options ...CheckoutOption) error
 	opts := processOptions[CheckoutOption, *gogit.CheckoutOptions](options...)
 
 	if plumbing.IsHash(target) {
-		opts = &gogit.CheckoutOptions{
-			Hash: plumbing.NewHash(target),
-		}
+		opts.Hash = plumbing.NewHash(target)
 	} else {
-		opts = &gogit.CheckoutOptions{
-			Branch: plumbing.NewBranchReferenceName(target),
-		}
+		opts.Branch = plumbing.NewBranchReferenceName(target)
 	}
 
 	if err = wt.Checkout(opts); err != nil {
