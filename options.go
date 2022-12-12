@@ -13,14 +13,14 @@ type (
 	CommitOption   func(o *gogit.CommitOptions)
 	PushOption     func(o *gogit.PushOptions)
 
-	Option interface {
+	OptionFunc interface {
 		CheckoutOption |
 			AddOption |
 			CommitOption |
 			PushOption
 	}
 
-	RepoOptions interface {
+	OptionType interface {
 		*gogit.CheckoutOptions |
 			*gogit.AddOptions |
 			*gogit.CommitOptions |
@@ -104,7 +104,7 @@ func WithRemote(r string) PushOption {
 
 func WithRemoteURL(rurl string) PushOption {
 	return func(o *gogit.PushOptions) {
-		o.RemoteName = rurl
+		o.RemoteURL = rurl
 	}
 }
 
@@ -126,8 +126,8 @@ func WithOpts(opts map[string]string) PushOption {
 	}
 }
 
-func processOptions[I Option, O RepoOptions](opts ...I) O {
-	options := *new(O)
+func processOptions[F OptionFunc, T OptionType](opts ...F) T {
+	options := *new(T)
 
 	for i := 0; i < len(opts); i++ {
 		opts[i](options)
