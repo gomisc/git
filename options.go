@@ -9,90 +9,78 @@ import (
 )
 
 type (
-	CloneOption    func(o *gogit.CloneOptions)
-	CheckoutOption func(o *gogit.CheckoutOptions)
-	AddOption      func(o *gogit.AddOptions)
-	CommitOption   func(o *gogit.CommitOptions)
-	PushOption     func(o *gogit.PushOptions)
-
-	OptionFunc interface {
-		CloneOption |
-			CheckoutOption |
-			AddOption |
-			CommitOption |
-			PushOption
-	}
-
 	OptionType interface {
-		*gogit.CloneOptions |
-			*gogit.CheckoutOptions |
-			*gogit.AddOptions |
-			*gogit.CommitOptions |
-			*gogit.PushOptions
+		gogit.CloneOptions |
+			gogit.CheckoutOptions |
+			gogit.AddOptions |
+			gogit.CommitOptions |
+			gogit.PushOptions
 	}
+
+	Option[T OptionType] func(*T)
 )
 
-func WithAuth(auth Auth) CloneOption {
+func WithAuth(auth Auth) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.Auth = auth.BasicMethod()
 	}
 }
 
-func WithURI(uri string) CloneOption {
+func WithURI(uri string) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.URL = uri
 	}
 }
 
-func WithBranch(branch string) CloneOption {
+func WithBranch(branch string) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.ReferenceName = plumbing.NewBranchReferenceName(branch)
 	}
 }
 
-func WithTag(tag string) CloneOption {
+func WithTag(tag string) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.ReferenceName = plumbing.NewTagReferenceName(tag)
 	}
 }
 
-func WithCreate() CheckoutOption {
+func WithCreate() Option[gogit.CheckoutOptions] {
 	return func(o *gogit.CheckoutOptions) {
 		o.Create = true
 	}
 }
 
-func ForceCheckout() CheckoutOption {
+func ForceCheckout() Option[gogit.CheckoutOptions] {
 	return func(o *gogit.CheckoutOptions) {
 		o.Force = true
 	}
 }
 
-func KeepCheckout() CheckoutOption {
+func KeepCheckout() Option[gogit.CheckoutOptions] {
 	return func(o *gogit.CheckoutOptions) {
 		o.Keep = true
 	}
 }
 
-func AddAll() AddOption {
+func AddAll() Option[gogit.AddOptions] {
 	return func(o *gogit.AddOptions) {
 		o.All = true
 	}
 }
 
-func AddPath(p string) AddOption {
+func AddPath(p string) Option[gogit.AddOptions] {
 	return func(o *gogit.AddOptions) {
 		o.Path = p
 	}
 }
 
-func AddMask(m string) AddOption {
+func AddMask(m string) Option[gogit.AddOptions] {
 	return func(o *gogit.AddOptions) {
 		o.Glob = m
 	}
 }
 
-func WithAuthor(user, email string, t time.Time) CommitOption {
+func WithAuthor(user, email string, t time.Time) Option[gogit.CommitOptions] {
 	return func(o *gogit.CommitOptions) {
 		o.Author = &object.Signature{
 			Name:  user,
@@ -102,7 +90,7 @@ func WithAuthor(user, email string, t time.Time) CommitOption {
 	}
 }
 
-func WithCommiter(user, email string, t time.Time) CommitOption {
+func WithCommiter(user, email string, t time.Time) Option[gogit.CommitOptions] {
 	return func(o *gogit.CommitOptions) {
 		o.Committer = &object.Signature{
 			Name:  user,
@@ -112,53 +100,53 @@ func WithCommiter(user, email string, t time.Time) CommitOption {
 	}
 }
 
-func CommitAll() CommitOption {
+func CommitAll() Option[gogit.CommitOptions] {
 	return func(o *gogit.CommitOptions) {
 		o.All = true
 	}
 }
 
-func ForcePush() PushOption {
+func ForcePush() Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.Force = true
 	}
 }
 
-func WithRemote(r string) PushOption {
+func WithRemote(r string) Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.RemoteName = r
 	}
 }
 
-func WithRemoteURL(rurl string) PushOption {
+func WithRemoteURL(rurl string) Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.RemoteURL = rurl
 	}
 }
 
-func WithTags() PushOption {
+func WithTags() Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.FollowTags = true
 	}
 }
 
-func WithAtomic() PushOption {
+func WithAtomic() Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.Atomic = true
 	}
 }
 
-func WithOpts(opts map[string]string) PushOption {
+func WithOpts(opts map[string]string) Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.Options = opts
 	}
 }
 
-func processOptions[F OptionFunc, T OptionType](opts ...F) T {
-	options := *new(T)
+func processOptions[T OptionType](opts ...Option[T]) *T {
+	var options = new(T)
 
-	for i := 0; i < len(opts); i++ {
-		opts[i](options)
+	for _, optFn := range opts {
+		optFn(options)
 	}
 
 	return options

@@ -44,13 +44,13 @@ func (r *gitRepository) Head() (Ref, error) {
 }
 
 // Checkout переключает репу на ветку либо каммит по хэшу
-func (r *gitRepository) Checkout(target string, options ...CheckoutOption) error {
+func (r *gitRepository) Checkout(target string, options ...Option[gogit.CheckoutOptions]) error {
 	wt, err := r.repo.Worktree()
 	if err != nil {
 		return errors.Wrap(err, "getting work tree")
 	}
 
-	opts := processOptions[CheckoutOption, *gogit.CheckoutOptions](options...)
+	opts := processOptions(options...)
 
 	if plumbing.IsHash(target) {
 		opts.Hash = plumbing.NewHash(target)
@@ -65,8 +65,8 @@ func (r *gitRepository) Checkout(target string, options ...CheckoutOption) error
 	return nil
 }
 
-func (r *gitRepository) Add(opts ...AddOption) error {
-	options := processOptions[AddOption, *gogit.AddOptions](opts...)
+func (r *gitRepository) Add(opts ...Option[gogit.AddOptions]) error {
+	options := processOptions(opts...)
 
 	tree, err := r.repo.Worktree()
 	if err != nil {
@@ -80,8 +80,8 @@ func (r *gitRepository) Add(opts ...AddOption) error {
 	return nil
 }
 
-func (r *gitRepository) Commit(message string, opts ...CommitOption) (string, error) {
-	options := processOptions[CommitOption, *gogit.CommitOptions](opts...)
+func (r *gitRepository) Commit(message string, opts ...Option[gogit.CommitOptions]) (string, error) {
+	options := processOptions(opts...)
 
 	if options.Author == nil {
 		options.Author = &object.Signature{
@@ -111,8 +111,8 @@ func (r *gitRepository) Commit(message string, opts ...CommitOption) (string, er
 	return commit.String(), nil
 }
 
-func (r *gitRepository) Push(options ...PushOption) error {
-	opts := processOptions[PushOption, *gogit.PushOptions](options...)
+func (r *gitRepository) Push(options ...Option[gogit.PushOptions]) error {
+	opts := processOptions(options...)
 
 	if err := r.repo.Push(opts); err != nil {
 		return errors.Wrap(err, "send push")

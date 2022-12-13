@@ -22,10 +22,10 @@ type (
 	Repo interface {
 		Pull() (Repo, error)
 		Head() (Ref, error)
-		Checkout(target string, options ...CheckoutOption) error
-		Add(opts ...AddOption) error
-		Commit(message string, opts ...CommitOption) (string, error)
-		Push(options ...PushOption) error
+		Checkout(target string, options ...Option[gogit.CheckoutOptions]) error
+		Add(opts ...Option[gogit.AddOptions]) error
+		Commit(message string, opts ...Option[gogit.CommitOptions]) (string, error)
+		Push(options ...Option[gogit.PushOptions]) error
 		Remotes() map[string][]string
 	}
 
@@ -36,7 +36,7 @@ type (
 )
 
 // Open - открывает существующий репозиторий
-func Open(path string, opts ...CloneOption) (Repo, error) {
+func Open(path string, opts ...Option[gogit.CloneOptions]) (Repo, error) {
 	var (
 		repo Repo = &gitRepository{path: path}
 		err  error
@@ -59,7 +59,7 @@ func Open(path string, opts ...CloneOption) (Repo, error) {
 
 // Clone - клонирует репозиторий с укзанным uri по указаанному пути
 // и возвращает интерфейс доступа к нему
-func Clone(path string, options ...CloneOption) (Repo, error) {
+func Clone(path string, options ...Option[gogit.CloneOptions]) (Repo, error) {
 	if filepaths.FileExists(path) {
 		if filepaths.FileExists(filepath.Join(path, ".git")) {
 			return nil, ErrRepoPathNotEmpty
@@ -70,7 +70,7 @@ func Clone(path string, options ...CloneOption) (Repo, error) {
 		return nil, errors.Wrap(err, "create repo path")
 	}
 
-	opts := processOptions[CloneOption, *gogit.CloneOptions](options...)
+	opts := processOptions(options...)
 
 	repo, err := gogit.PlainClone(path, false, opts)
 	if err != nil {
