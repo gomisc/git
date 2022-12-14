@@ -33,7 +33,9 @@ func (r *gitRepository) Pull(options ...Option[gogit.PullOptions]) error {
 	}
 
 	if err = tree.Pull(opts); err != nil {
-		return errors.Wrap(err, "pull and merge new commits")
+		if !errors.Is(err, gogit.NoErrAlreadyUpToDate) {
+			return errors.Wrap(err, "pull and merge new commits")
+		}
 	}
 
 	return nil
