@@ -8,29 +8,35 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 )
 
 type gitRepository struct {
 	path   string
 	config *config.Config
 	repo   *gogit.Repository
+	auth   transport.AuthMethod
 }
 
 // Pull пуллит репу
-func (r *gitRepository) Pull() (Repo, error) {
-	repo, err := gogit.PlainOpen(r.path)
+func (r *gitRepository) Pull(options ...Option[gogit.PullOptions]) error {
+	tree, err := r.repo.Worktree()
 	if err != nil {
-		return nil, errors.Wrap(err, "pull repo")
+		return errors.Wrap(err, "getting work tree")
 	}
 
-	r.repo = repo
+	opts := processOptions(options...)
+	opts.Auth = r.auth
 
-	r.config, err = repo.Config()
-	if err != nil {
-		return nil, errors.Wrap(err, "get repo config")
+	if opts.RemoteName == "" {
+		opts.RemoteName = "origin"
 	}
 
-	return r, nil
+	if err = tree.Pull(opts); err != nil {
+		return errors.Wrap(err, "pull and merge new commits")
+	}
+
+	return nil
 }
 
 // Head возвращает голову
@@ -45,7 +51,7 @@ func (r *gitRepository) Head() (Ref, error) {
 
 // Checkout переключает репу на ветку либо каммит по хэшу
 func (r *gitRepository) Checkout(target string, options ...Option[gogit.CheckoutOptions]) error {
-	wt, err := r.repo.Worktree()
+	tree, err := r.repo.Worktree()
 	if err != nil {
 		return errors.Wrap(err, "getting work tree")
 	}
@@ -58,7 +64,7 @@ func (r *gitRepository) Checkout(target string, options ...Option[gogit.Checkout
 		opts.Branch = plumbing.NewBranchReferenceName(target)
 	}
 
-	if err = wt.Checkout(opts); err != nil {
+	if err = tree.Checkout(opts); err != nil {
 		return errors.Wrap(err, "checkout to commit")
 	}
 
@@ -113,6 +119,7 @@ func (r *gitRepository) Commit(message string, opts ...Option[gogit.CommitOption
 
 func (r *gitRepository) Push(options ...Option[gogit.PushOptions]) error {
 	opts := processOptions(options...)
+	opts.Auth = r.auth
 
 	if err := r.repo.Push(opts); err != nil {
 		return errors.Wrap(err, "send push")

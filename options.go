@@ -11,6 +11,7 @@ import (
 type (
 	OptionType interface {
 		gogit.CloneOptions |
+			gogit.PullOptions |
 			gogit.CheckoutOptions |
 			gogit.AddOptions |
 			gogit.CommitOptions |
@@ -20,31 +21,55 @@ type (
 	Option[T OptionType] func(*T)
 )
 
-func WithAuth(auth Auth) Option[gogit.CloneOptions] {
+func CloneAuth(auth Auth) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.Auth = auth.BasicMethod()
 	}
 }
 
-func WithURI(uri string) Option[gogit.CloneOptions] {
+func CloneURI(uri string) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.URL = uri
 	}
 }
 
-func WithBranch(branch string) Option[gogit.CloneOptions] {
+func CloneBranch(branch string) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.ReferenceName = plumbing.NewBranchReferenceName(branch)
 	}
 }
 
-func WithTag(tag string) Option[gogit.CloneOptions] {
+func CloneTag(tag string) Option[gogit.CloneOptions] {
 	return func(o *gogit.CloneOptions) {
 		o.ReferenceName = plumbing.NewTagReferenceName(tag)
 	}
 }
 
-func WithCreate() Option[gogit.CheckoutOptions] {
+func PullRemote(name string) Option[gogit.PullOptions] {
+	return func(o *gogit.PullOptions) {
+		o.RemoteName = name
+	}
+}
+
+func PullRemoteURL(uri string) Option[gogit.PullOptions] {
+	return func(o *gogit.PullOptions) {
+		o.RemoteURL = uri
+	}
+}
+
+func PullBranch(branch string) Option[gogit.PullOptions] {
+	return func(o *gogit.PullOptions) {
+		o.ReferenceName = plumbing.NewBranchReferenceName(branch)
+	}
+}
+
+func PullTag(tag string) Option[gogit.PullOptions] {
+	return func(o *gogit.PullOptions) {
+		o.ReferenceName = plumbing.NewTagReferenceName(tag)
+	}
+}
+
+func CheckoutCreate() Option[gogit.CheckoutOptions] {
 	return func(o *gogit.CheckoutOptions) {
 		o.Create = true
 	}
@@ -80,7 +105,7 @@ func AddMask(m string) Option[gogit.AddOptions] {
 	}
 }
 
-func WithAuthor(user, email string, t time.Time) Option[gogit.CommitOptions] {
+func CommitAuthor(user, email string, t time.Time) Option[gogit.CommitOptions] {
 	return func(o *gogit.CommitOptions) {
 		o.Author = &object.Signature{
 			Name:  user,
@@ -90,7 +115,7 @@ func WithAuthor(user, email string, t time.Time) Option[gogit.CommitOptions] {
 	}
 }
 
-func WithCommiter(user, email string, t time.Time) Option[gogit.CommitOptions] {
+func Commiter(user, email string, t time.Time) Option[gogit.CommitOptions] {
 	return func(o *gogit.CommitOptions) {
 		o.Committer = &object.Signature{
 			Name:  user,
@@ -112,31 +137,31 @@ func ForcePush() Option[gogit.PushOptions] {
 	}
 }
 
-func WithRemote(r string) Option[gogit.PushOptions] {
+func PushRemote(r string) Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.RemoteName = r
 	}
 }
 
-func WithRemoteURL(rurl string) Option[gogit.PushOptions] {
+func PushRemoteURL(uri string) Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
-		o.RemoteURL = rurl
+		o.RemoteURL = uri
 	}
 }
 
-func WithTags() Option[gogit.PushOptions] {
+func PushTags() Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.FollowTags = true
 	}
 }
 
-func WithAtomic() Option[gogit.PushOptions] {
+func PushAtomic() Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.Atomic = true
 	}
 }
 
-func WithOpts(opts map[string]string) Option[gogit.PushOptions] {
+func PushOpts(opts map[string]string) Option[gogit.PushOptions] {
 	return func(o *gogit.PushOptions) {
 		o.Options = opts
 	}

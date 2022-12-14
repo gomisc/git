@@ -20,7 +20,7 @@ type (
 	}
 
 	Repo interface {
-		Pull() (Repo, error)
+		Pull(options ...Option[gogit.PullOptions]) error
 		Head() (Ref, error)
 		Checkout(target string, options ...Option[gogit.CheckoutOptions]) error
 		Add(opts ...Option[gogit.AddOptions]) error
@@ -37,11 +37,6 @@ type (
 
 // Open - открывает существующий репозиторий
 func Open(path string, opts ...Option[gogit.CloneOptions]) (Repo, error) {
-	var (
-		repo Repo = &gitRepository{path: path}
-		err  error
-	)
-
 	switch {
 	case !filepaths.FileExists(path):
 		return Clone(path, opts...)
@@ -49,12 +44,14 @@ func Open(path string, opts ...Option[gogit.CloneOptions]) (Repo, error) {
 		return nil, ErrWrongRepoPath
 	}
 
-	repo, err = repo.Pull()
+	r, err := gogit.PlainOpen(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "open repo")
 	}
 
-	return repo, nil
+	options := processOptions(opts...)
+
+	return &gitRepository{path: path, repo: r, auth: options.Auth}, nil
 }
 
 // Clone - клонирует репозиторий с укзанным uri по указаанному пути
@@ -88,5 +85,6 @@ func Clone(path string, options ...Option[gogit.CloneOptions]) (Repo, error) {
 		path:   path,
 		repo:   repo,
 		config: conf,
+		auth:   opts.Auth,
 	}, nil
 }
