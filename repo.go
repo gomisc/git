@@ -1,6 +1,7 @@
 package git
 
 import (
+	"sync"
 	"time"
 
 	"git.eth4.dev/golibs/errors"
@@ -14,12 +15,17 @@ import (
 type gitRepository struct {
 	path   string
 	config *config.Config
-	repo   *gogit.Repository
 	auth   transport.AuthMethod
+
+	sync.RWMutex
+	repo *gogit.Repository
 }
 
 // Pull пуллит репу
 func (r *gitRepository) Pull(options ...Option[gogit.PullOptions]) error {
+	r.Lock()
+	defer r.Unlock()
+
 	tree, err := r.repo.Worktree()
 	if err != nil {
 		return errors.Wrap(err, "getting work tree")
@@ -43,6 +49,9 @@ func (r *gitRepository) Pull(options ...Option[gogit.PullOptions]) error {
 
 // Head возвращает голову
 func (r *gitRepository) Head() (Ref, error) {
+	r.RLock()
+	defer r.RUnlock()
+
 	ref, err := r.repo.Head()
 	if err != nil {
 		return nil, errors.Wrap(err, "get repo head")
@@ -53,6 +62,9 @@ func (r *gitRepository) Head() (Ref, error) {
 
 // Checkout переключает репу на ветку либо каммит по хэшу
 func (r *gitRepository) Checkout(target string, options ...Option[gogit.CheckoutOptions]) error {
+	r.Lock()
+	defer r.Unlock()
+
 	tree, err := r.repo.Worktree()
 	if err != nil {
 		return errors.Wrap(err, "getting work tree")
@@ -76,6 +88,9 @@ func (r *gitRepository) Checkout(target string, options ...Option[gogit.Checkout
 func (r *gitRepository) Add(opts ...Option[gogit.AddOptions]) error {
 	options := processOptions(opts...)
 
+	r.Lock()
+	defer r.Unlock()
+
 	tree, err := r.repo.Worktree()
 	if err != nil {
 		return errors.Wrap(err, "get work tree")
@@ -98,6 +113,9 @@ func (r *gitRepository) Commit(message string, opts ...Option[gogit.CommitOption
 			When:  time.Now(),
 		}
 	}
+
+	r.Lock()
+	defer r.Unlock()
 
 	tree, err := r.repo.Worktree()
 	if err != nil {
@@ -123,6 +141,9 @@ func (r *gitRepository) Push(options ...Option[gogit.PushOptions]) error {
 	opts := processOptions(options...)
 	opts.Auth = r.auth
 
+	r.Lock()
+	defer r.Unlock()
+
 	if err := r.repo.Push(opts); err != nil {
 		return errors.Wrap(err, "send push")
 	}
@@ -132,6 +153,9 @@ func (r *gitRepository) Push(options ...Option[gogit.PushOptions]) error {
 
 // Remotes возвращает ремоуты репозитория из его конфига
 func (r *gitRepository) Remotes() map[string][]string {
+	r.RLock()
+	defer r.RUnlock()
+
 	result := make(map[string][]string)
 
 	if r.config != nil {
