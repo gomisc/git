@@ -1,6 +1,6 @@
 module gopkg.in/gomisc/git.v1
 
-go 1.18
+go 1.20
 
 require (
 	github.com/go-git/go-git/v5 v5.5.1
