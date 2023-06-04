@@ -3,7 +3,7 @@ package gitlab
 import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 
-	"git.eth4.dev/golibs/git"
+	"gopkg.in/gomisc/git.v1"
 )
 
 const (

@@ -4,12 +4,13 @@ import (
 	"sync"
 	"time"
 
-	"git.eth4.dev/golibs/errors"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport"
+
+	"gopkg.in/gomisc/errors.v1"
 )
 
 type gitRepository struct {
